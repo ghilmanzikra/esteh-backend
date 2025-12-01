@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class BarangKeluar extends Model
 {
+    protected $table = 'barang_keluar';
     protected $fillable = [
-        'bahan_id', 'outlet_id', 'jumlah',
+        'bahan_id', 'outlet_id', 'permintaan_id', 'jumlah',
         'tanggal_keluar', 'status', 'bukti_foto'
     ];
 
@@ -21,5 +22,10 @@ class BarangKeluar extends Model
     public function outlet()
     {
         return $this->belongsTo(Outlet::class);
+    }
+
+    public function permintaan()
+    {
+        return $this->belongsTo(PermintaanStok::class, 'permintaan_id');
     }
 }

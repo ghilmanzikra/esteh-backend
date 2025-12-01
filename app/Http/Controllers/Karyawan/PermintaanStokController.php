@@ -8,32 +8,53 @@ use Illuminate\Http\Request;
 
 class PermintaanStokController extends Controller
 {
-    public function store(Request $request)
-    {
-        $user = auth('api')->user();
-        if ($user->role !== 'karyawan') return response()->json(['message' => 'Akses ditolak'], 403);
-
-        $request->validate([
-            'bahan_id' => 'required|exists:bahan,id',
-            'jumlah'   => 'required|numeric|min:0.1'
-        ]);
-
-        $permintaan = PermintaanStok::create([
-            'outlet_id' => $user->outlet_id,
-            'bahan_id'  => $request->bahan_id,
-            'jumlah'    => $request->jumlah,
-            'status'    => 'diajukan'
-        ]);
-
-        return response()->json($permintaan->load('bahan'), 201);
-    }
-
+    /**
+     * Menampilkan daftar permintaan stok untuk outlet pengguna
+     */
     public function index()
     {
-        $user = auth('api')->user();
-        return PermintaanStok::where('outlet_id', $user->outlet_id)
+        return PermintaanStok::where('outlet_id', auth()->user()->outlet_id)
             ->with('bahan')
-            ->latest()
             ->get();
+    }
+
+    /**
+     * Membuat permintaan stok baru
+     */
+    public function store(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user || !$user->outlet_id) {
+                return response()->json(['error' => 'Pengguna tidak memiliki outlet yang valid'], 403);
+            }
+
+            $request->validate([
+                'bahan_id' => 'required|exists:bahan,id',
+                'jumlah' => 'required|numeric|min:0.001'
+            ]);
+
+            $permintaan = PermintaanStok::create([
+                'outlet_id' => $user->outlet_id,
+                'bahan_id' => $request->bahan_id,
+                'jumlah' => $request->jumlah,
+                'status' => 'diajukan' // Sesuai dengan enum di tabel permintaan_stok
+            ]);
+
+            return response()->json($permintaan, 201);
+        } catch (\Exception $e) {
+            \Log::error('Permintaan Stok Error: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Menampilkan detail permintaan stok tertentu
+     */
+    public function show($id)
+    {
+        return PermintaanStok::where('outlet_id', auth()->user()->outlet_id)
+            ->with('bahan')
+            ->findOrFail($id);
     }
 }

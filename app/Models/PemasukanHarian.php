@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PemasukanHarian extends Model
 {
+    protected $table = 'pemasukan_harian';
     protected $fillable = ['outlet_id', 'tanggal', 'total_pemasukan'];
 
     protected $dates = ['tanggal'];
